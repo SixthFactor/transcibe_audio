@@ -7,7 +7,7 @@ from langdetect import detect
 
 OPENAI_API_KEY = st.secrets["api_key"]
 # Set up OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = OPENAI_API_KEY
 
 # Function to transcribe audio using OpenAI's Whisper model
 def transcribe(audio_file_path):
