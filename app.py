@@ -5,7 +5,7 @@ import os
 OPENAI_API_KEY = st.secrets["api_key"]
 
 # Set your OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = OPENAI_API_KEY
 
 def transcribe(audio_file, language):
     transcription = openai.audio.transcriptions.create(
