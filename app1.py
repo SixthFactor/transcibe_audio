@@ -63,8 +63,8 @@ if uploaded_file is not None and st.session_state.transcription is None:
         st.session_state.transcription = transcription
         detected_language = detect(transcription)
         st.session_state.detected_language = detected_language
-        st.write("Original Text:", transcription)
-        st.write("Detected Language:", detected_language)
+        # st.write("Original Text:", transcription)
+        # st.write("Detected Language:", detected_language)
 
     # Clean up temporary file
     if os.path.exists(temp_audio_file):
