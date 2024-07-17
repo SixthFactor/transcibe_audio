@@ -40,7 +40,7 @@ def translate_text(text, target_language):
 st.title("Audio Transcription and Translation")
 
 # File uploader
-uploaded_file = st.file_uploader("Choose an audio file...", type=["wav", "mp3", "ogg"])
+uploaded_file = st.file_uploader("Choose an audio file...", type=["wav", "mp3", "ogg", "m4a"])
 
 # Target language input
 target_language = st.text_input("Enter target language for translation:", "Hindi")
