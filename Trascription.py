@@ -9,21 +9,34 @@ OPENAI_API_KEY = st.secrets["api_key"]
 # Set up OpenAI API key
 openai.api_key = OPENAI_API_KEY
 
+# def get_chunk_length_ms(file_path, target_size_mb):
+#     """
+#     Calculate the length of each chunk in milliseconds to create chunks of approximately target_size_mb.
+
+#     Args:
+#     file_path (str): Path to the audio file.
+#     target_size_mb (int): Target size of each chunk in megabytes. Default is 5 MB.
+
+#     Returns:
+#     int: Chunk length in milliseconds.
+#     """
+#     audio = AudioSegment.from_file(file_path)
+#     file_size_bytes = os.path.getsize(file_path)
+#     duration_ms = len(audio)
 def get_chunk_length_ms(file_path, target_size_mb):
-    """
-    Calculate the length of each chunk in milliseconds to create chunks of approximately target_size_mb.
+    """Calculate the chunk length in milliseconds."""
+    if not os.path.exists(file_path):
+        st.error(f"File not found: {file_path}")
+        return None
 
-    Args:
-    file_path (str): Path to the audio file.
-    target_size_mb (int): Target size of each chunk in megabytes. Default is 5 MB.
-
-    Returns:
-    int: Chunk length in milliseconds.
-    """
-    audio = AudioSegment.from_file(file_path)
-    file_size_bytes = os.path.getsize(file_path)
-    duration_ms = len(audio)
-
+    try:
+        audio = AudioSegment.from_file(file_path)
+        file_size_bytes = os.path.getsize(file_path)
+        duration_ms = len(audio)
+        # Perform further processing...
+    except Exception as e:
+        st.error(f"An error occurred: {str(e)}")
+        return None
     # Calculate the approximate duration per byte
     duration_per_byte = duration_ms / file_size_bytes
 
