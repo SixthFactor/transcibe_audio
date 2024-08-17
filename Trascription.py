@@ -1,3 +1,4 @@
+
 import streamlit as st
 import openai
 import os
@@ -91,8 +92,8 @@ uploaded_file = st.file_uploader("Upload an audio file", type=["wav", "mp3", "og
 
 if 'transcription' not in st.session_state:
     st.session_state.transcription = None
-    
-if uploaded_file is not None:
+
+if uploaded_file is not None and st.session_state.transcription is None:
     st.audio(uploaded_file)
     
     # Save uploaded file temporarily
@@ -108,19 +109,20 @@ if uploaded_file is not None:
         audio_chunks = split_audio(temp_audio_file, chunk_length_ms)
         transcription = process_audio_chunks(audio_chunks)
         if transcription:
+            st.session_state.transcription = transcription
             st.success('Transcription complete!')
-            st.text_area("Transcription", transcription)
+            # st.text_area("Transcription", transcription, key="transcription_area")
 
             # Save transcription to a text file
             output_file_path = f'{original_file_name}_transcription.txt'
             with open(output_file_path, 'w', encoding='utf-8') as f:
                 f.write(transcription)
-            st.download_button(label="Download Transcription", data=transcription, file_name=output_file_path, mime='text/plain')
+            st.session_state.output_file_path = output_file_path
             
     # Clean up temporary file
     if os.path.exists(temp_audio_file):
         os.remove(temp_audio_file)
 
-    # Prevent rerun
-    if 'download_button' in st.session_state and st.session_state.download_button:
-        st.stop()
+if st.session_state.transcription:
+    st.text_area("Transcription", st.session_state.transcription, key="transcription_area_final")
+    st.download_button(label="Download Transcription", data=st.session_state.transcription, file_name=st.session_state.output_file_path, mime='text/plain')
