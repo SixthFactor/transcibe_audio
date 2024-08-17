@@ -3,15 +3,12 @@ import streamlit as st
 import openai
 import os
 from pydub import AudioSegment
-from dotenv import load_dotenv
 from tempfile import NamedTemporaryFile
 import math
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Set your OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = st.secrets["api_key"]
+# Set up OpenAI API key
+openai.api_key = OPENAI_API_KEY
 
 def get_chunk_length_ms(file_path, target_size_mb):
     """
