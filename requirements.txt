@@ -3,4 +3,3 @@ streamlit
 pydub
 SpeechRecognition
 langdetect
-ffmpeg
