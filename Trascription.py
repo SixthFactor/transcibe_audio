@@ -106,35 +106,38 @@ uploaded_file = st.file_uploader("Upload an audio file", type=["wav", "mp3", "og
 if 'transcription' not in st.session_state:
     st.session_state.transcription = None
 
-if uploaded_file is not None and st.session_state.transcription is None:
-    st.audio(uploaded_file)
-    
-    # Save uploaded file temporarily
+# Ensure there is an uploaded file and it's saved properly
+if uploaded_file is not None:
     file_extension = uploaded_file.name.split(".")[-1]
-    original_file_name = uploaded_file.name.rsplit('.', 1)[0]  # Get the original file name without extension
+    original_file_name = uploaded_file.name.rsplit('.', 1)[0]
     temp_audio_file = f"temp_audio_file.{file_extension}"
     with open(temp_audio_file, "wb") as f:
         f.write(uploaded_file.getbuffer())
-
-    # Split and process audio
-    with st.spinner('Transcribing...'):
-        chunk_length_ms = get_chunk_length_ms(temp_audio_file, target_size_mb=5)
-        audio_chunks = split_audio(temp_audio_file, chunk_length_ms)
-        transcription = process_audio_chunks(audio_chunks)
-        if transcription:
-            st.session_state.transcription = transcription
-            st.success('Transcription complete!')
-            # st.text_area("Transcription", transcription, key="transcription_area")
-
-            # Save transcription to a text file
-            output_file_path = f'{original_file_name}_transcription.txt'
-            with open(output_file_path, 'w', encoding='utf-8') as f:
-                f.write(transcription)
-            st.session_state.output_file_path = output_file_path
-            
-    # Clean up temporary file
+    
+    # Check if the file was saved and proceed
+    if os.path.exists(temp_audio_file):
+        with st.spinner('Transcribing...'):
+            chunk_length_ms = get_chunk_length_ms(temp_audio_file, target_size_mb=5)
+            if chunk_length_ms:
+                audio_chunks = split_audio(temp_audio_file, chunk_length_ms)
+                if audio_chunks:
+                    transcription = process_audio_chunks(audio_chunks)
+                    if transcription:
+                        st.session_state.transcription = transcription
+                        st.success('Transcription complete!')
+                else:
+                    st.error("Failed to split audio.")
+            else:
+                st.error("Failed to calculate chunk length.")
+    else:
+        st.error("Temporary audio file does not exist.")
+    
+    # Clean up the temporary file
     if os.path.exists(temp_audio_file):
         os.remove(temp_audio_file)
+else:
+    st.error("No audio file uploaded.")
+
 
 if st.session_state.transcription:
     st.text_area("Transcription", st.session_state.transcription, key="transcription_area_final")
