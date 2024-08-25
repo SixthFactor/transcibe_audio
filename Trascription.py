@@ -31,9 +31,9 @@ from pydub.utils import which
 AudioSegment.converter = which("ffmpeg") 
 AudioSegment.ffprobe = which("ffprobe")
 
-if not AudioSegment.converter or not AudioSegment.ffprobe:
-    st.error("ffmpeg or ffprobe not found. Please ensure they are installed and accessible.")
-    st.stop()
+# if not AudioSegment.converter or not AudioSegment.ffprobe:
+#     st.error("ffmpeg or ffprobe not found. Please ensure they are installed and accessible.")
+#     st.stop()
 
 
 def get_chunk_length_ms(file_path, target_size_mb):
