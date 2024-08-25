@@ -9,6 +9,7 @@ OPENAI_API_KEY = st.secrets["api_key"]
 # Set up OpenAI API key
 openai.api_key = OPENAI_API_KEY
 
+
 # def get_chunk_length_ms(file_path, target_size_mb):
 #     """
 #     Calculate the length of each chunk in milliseconds to create chunks of approximately target_size_mb.
@@ -23,6 +24,18 @@ openai.api_key = OPENAI_API_KEY
 #     audio = AudioSegment.from_file(file_path)
 #     file_size_bytes = os.path.getsize(file_path)
 #     duration_ms = len(audio)
+
+from pydub.utils import which
+
+# Set paths for ffmpeg and ffprobe if they are not in the PATH
+AudioSegment.converter = which("ffmpeg") or "path/to/ffmpeg"
+AudioSegment.ffprobe = which("ffprobe") or "path/to/ffprobe"
+
+if not AudioSegment.converter or not AudioSegment.ffprobe:
+    st.error("ffmpeg or ffprobe not found. Please ensure they are installed and accessible.")
+    st.stop()
+
+
 def get_chunk_length_ms(file_path, target_size_mb):
     """Calculate the chunk length in milliseconds."""
     if not os.path.exists(file_path):
@@ -63,15 +76,17 @@ def split_audio(audio_file_path, chunk_length_ms):
 def transcribe(audio_file):
     try:
         with open(audio_file, "rb") as audio:
-            response = openai.audio.transcriptions.create(
+            response = openai.Audio.transcribe(
                 model="whisper-1",
                 file=audio,
                 response_format="text"
             )
         return response
-    
     except openai.error.OpenAIError as e:
         st.error(f"OpenAI API Error: {e}")
+        return None
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {str(e)}")
         return None
 
 def process_audio_chunks(audio_chunks):
