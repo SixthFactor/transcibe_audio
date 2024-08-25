@@ -10,7 +10,7 @@ OPENAI_API_KEY = st.secrets["api_key"]
 openai.api_key = OPENAI_API_KEY
 
 
-# def get_chunk_length_ms(file_path, target_size_mb):
+# def get_chunk_length_ms(file_path, target_size_mb): 
 #     """
 #     Calculate the length of each chunk in milliseconds to create chunks of approximately target_size_mb.
 
