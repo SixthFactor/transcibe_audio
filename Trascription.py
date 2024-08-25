@@ -104,39 +104,28 @@ st.title("Audio Transcription with OpenAI's Whisper")
 
 uploaded_file = st.file_uploader("Upload an audio file", type=["wav", "mp3", "ogg", "m4a"])
 
-if 'transcription' not in st.session_state:
-    st.session_state.transcription = None
+if uploaded_file is None:
+    st.warning("Please upload an audio file to proceed.")
+else:
+    if 'transcription' not in st.session_state or st.session_state.transcription is None:
+        st.audio(uploaded_file)
+        temp_audio_file = f"temp_audio_file.{uploaded_file.name.split('.')[-1]}"
+        with open(temp_audio_file, "wb") as f:
+            f.write(uploaded_file.getbuffer())
 
-if uploaded_file is not None and st.session_state.transcription is None:
-    st.audio(uploaded_file)
-    
-    # Save uploaded file temporarily
-    file_extension = uploaded_file.name.split(".")[-1]
-    original_file_name = uploaded_file.name.rsplit('.', 1)[0]  # Get the original file name without extension
-    temp_audio_file = f"temp_audio_file.{file_extension}"
-    with open(temp_audio_file, "wb") as f:
-        f.write(uploaded_file.getbuffer())
+        with st.spinner('Transcribing...'):
+            chunk_length_ms = get_chunk_length_ms(temp_audio_file, target_size_mb=3)
+            audio_chunks = split_audio(temp_audio_file, chunk_length_ms)
+            transcription = process_audio_chunks(audio_chunks)
+            if transcription:
+                st.session_state.transcription = transcription
+                st.success('Transcription complete!')
+                output_file_path = f'{uploaded_file.name.rsplit(".", 1)[0]}_transcription.txt'
+                with open(output_file_path, 'w', encoding='utf-8') as f:
+                    f.write(transcription)
+                st.session_state.output_file_path = output_file_path
+            os.remove(temp_audio_file)
 
-    # Split and process audio
-    with st.spinner('Transcribing...'):
-        chunk_length_ms = get_chunk_length_ms(temp_audio_file, target_size_mb=3)
-        audio_chunks = split_audio(temp_audio_file, chunk_length_ms)
-        transcription = process_audio_chunks(audio_chunks)
-        if transcription:
-            st.session_state.transcription = transcription
-            st.success('Transcription complete!')
-            # st.text_area("Transcription", transcription, key="transcription_area")
-
-            # Save transcription to a text file
-            output_file_path = f'{original_file_name}_transcription.txt'
-            with open(output_file_path, 'w', encoding='utf-8') as f:
-                f.write(transcription)
-            st.session_state.output_file_path = output_file_path
-            
-    # Clean up temporary file
-    if os.path.exists(temp_audio_file):
-        os.remove(temp_audio_file)
-
-if st.session_state.transcription:
-    st.text_area("Transcription", st.session_state.transcription, key="transcription_area_final")
-    st.download_button(label="Download Transcription", data=st.session_state.transcription, file_name=st.session_state.output_file_path, mime='text/plain')
+    if st.session_state.transcription:
+        st.text_area("Transcription", st.session_state.transcription, key="transcription_area_final")
+        st.download_button("Download Transcription", st.session_state.transcription, file_name=st.session_state.output_file_path, mime='text/plain')
