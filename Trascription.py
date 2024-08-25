@@ -35,16 +35,25 @@ def get_chunk_length_ms(file_path, target_size_mb):
         audio = AudioSegment.from_file(file_path)
         file_size_bytes = os.path.getsize(file_path)
         duration_ms = len(audio)
-        # Perform further processing...
     except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
+        st.error(f"An error occurred while processing the audio file: {str(e)}")
         return None
+
+    if file_size_bytes == 0:
+        st.error("File size is zero, cannot calculate duration per byte.")
+        return None
+
     # Calculate the approximate duration per byte
     duration_per_byte = duration_ms / file_size_bytes
 
     # Calculate the chunk length in milliseconds for the target size
-    chunk_length_ms = target_size_mb * 1024 * 1024 * duration_per_byte
-    return math.floor(chunk_length_ms)
+    chunk_length_ms = int(target_size_mb * 1024 * 1024 * duration_per_byte)
+    if chunk_length_ms == 0:
+        st.error("Calculated chunk length is zero, check the target size and file properties.")
+        return None
+    
+    return chunk_length_ms
+
 
 def split_audio(audio_file_path, chunk_length_ms):
     """
