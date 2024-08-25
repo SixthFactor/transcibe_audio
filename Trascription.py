@@ -110,7 +110,7 @@ if uploaded_file is not None and st.session_state.transcription is None:
 
     # Split and process audio
     with st.spinner('Transcribing...'):
-        chunk_length_ms = get_chunk_length_ms(temp_audio_file, target_size_mb=3)
+        chunk_length_ms = get_chunk_length_ms(temp_audio_file, target_size_mb)
         audio_chunks = split_audio(temp_audio_file, chunk_length_ms)
         transcription = process_audio_chunks(audio_chunks)
         if transcription:
