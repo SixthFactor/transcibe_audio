@@ -28,8 +28,8 @@ openai.api_key = OPENAI_API_KEY
 from pydub.utils import which
 
 # Set paths for ffmpeg and ffprobe if they are not in the PATH
-AudioSegment.converter = which("ffmpeg") or "path/to/ffmpeg"
-AudioSegment.ffprobe = which("ffprobe") or "path/to/ffprobe"
+AudioSegment.converter = which("ffmpeg") 
+AudioSegment.ffprobe = which("ffprobe")
 
 if not AudioSegment.converter or not AudioSegment.ffprobe:
     st.error("ffmpeg or ffprobe not found. Please ensure they are installed and accessible.")
