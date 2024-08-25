@@ -4,19 +4,26 @@ import os
 from pydub import AudioSegment
 from tempfile import NamedTemporaryFile
 import math
-from pydub.utils import which
 
-# Set up OpenAI API key
 OPENAI_API_KEY = st.secrets["api_key"]
+# Set up OpenAI API key
 openai.api_key = OPENAI_API_KEY
 
-# Ensure ffmpeg and ffprobe are available
-AudioSegment.converter = which("ffmpeg")
-AudioSegment.ffprobe = which("ffprobe")
 
-if not AudioSegment.converter or not AudioSegment.ffprobe:
-    st.error("ffmpeg or ffprobe not found. Please ensure they are installed and accessible.")
-    st.stop()
+# def get_chunk_length_ms(file_path, target_size_mb): 
+#     """
+#     Calculate the length of each chunk in milliseconds to create chunks of approximately target_size_mb.
+
+#     Args:
+#     file_path (str): Path to the audio file.
+#     target_size_mb (int): Target size of each chunk in megabytes. Default is 5 MB.
+
+#     Returns:
+#     int: Chunk length in milliseconds.
+#     """
+#     audio = AudioSegment.from_file(file_path)
+#     file_size_bytes = os.path.getsize(file_path)
+#     duration_ms = len(audio)
 
 def get_chunk_length_ms(file_path, target_size_mb):
     """Calculate the chunk length in milliseconds."""
@@ -28,10 +35,10 @@ def get_chunk_length_ms(file_path, target_size_mb):
         audio = AudioSegment.from_file(file_path)
         file_size_bytes = os.path.getsize(file_path)
         duration_ms = len(audio)
+        # Perform further processing...
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
         return None
-
     # Calculate the approximate duration per byte
     duration_per_byte = duration_ms / file_size_bytes
 
@@ -50,14 +57,10 @@ def split_audio(audio_file_path, chunk_length_ms):
     Returns:
     list: List of AudioSegment chunks.
     """
-    try:
-        audio = AudioSegment.from_file(audio_file_path)
-    except Exception as e:
-        st.error(f"Failed to load audio file: {str(e)}")
-        return []
-
+    audio = AudioSegment.from_file(audio_file_path)
     chunks = [audio[i:i + chunk_length_ms] for i in range(0, len(audio), chunk_length_ms)]
     return chunks
+
 
 def transcribe(audio_file):
     try:
@@ -116,19 +119,19 @@ if uploaded_file is not None and st.session_state.transcription is None:
     # Split and process audio
     with st.spinner('Transcribing...'):
         chunk_length_ms = get_chunk_length_ms(temp_audio_file, target_size_mb=5)
-        if chunk_length_ms:
-            audio_chunks = split_audio(temp_audio_file, chunk_length_ms)
-            transcription = process_audio_chunks(audio_chunks)
-            if transcription:
-                st.session_state.transcription = transcription
-                st.success('Transcription complete!')
-                
-                # Save transcription to a text file
-                output_file_path = f'{original_file_name}_transcription.txt'
-                with open(output_file_path, 'w', encoding='utf-8') as f:
-                    f.write(transcription)
-                st.session_state.output_file_path = output_file_path
+        audio_chunks = split_audio(temp_audio_file, chunk_length_ms)
+        transcription = process_audio_chunks(audio_chunks)
+        if transcription:
+            st.session_state.transcription = transcription
+            st.success('Transcription complete!')
+            # st.text_area("Transcription", transcription, key="transcription_area")
 
+            # Save transcription to a text file
+            output_file_path = f'{original_file_name}_transcription.txt'
+            with open(output_file_path, 'w', encoding='utf-8') as f:
+                f.write(transcription)
+            st.session_state.output_file_path = output_file_path
+            
     # Clean up temporary file
     if os.path.exists(temp_audio_file):
         os.remove(temp_audio_file)
