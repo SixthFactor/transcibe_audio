@@ -126,7 +126,7 @@ if uploaded_file is not None:
     # Check if the file was saved and proceed
     if os.path.exists(temp_audio_file):
         with st.spinner('Transcribing...'):
-            chunk_length_ms = get_chunk_length_ms(temp_audio_file, target_size_mb=5)
+            chunk_length_ms = get_chunk_length_ms(temp_audio_file, target_size_mb=4)
             if chunk_length_ms:
                 audio_chunks = split_audio(temp_audio_file, chunk_length_ms)
                 if audio_chunks:
