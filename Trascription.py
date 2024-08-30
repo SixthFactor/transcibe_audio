@@ -9,13 +9,13 @@ OPENAI_API_KEY = st.secrets["api_key"]
 # Set up OpenAI API key
 openai.api_key = OPENAI_API_KEY
 
-# from pydub.utils import which
+from pydub.utils import which
 
-# AudioSegment.converter = which("ffmpeg") 
-# AudioSegment.ffprobe = which("ffprobe") 
+AudioSegment.converter = which("ffmpeg") 
+AudioSegment.ffprobe = which("ffprobe") 
 
-# if not (AudioSegment.converter and AudioSegment.ffprobe):
-#     st.error("ffmpeg or ffprobe is not correctly installed or not found in the system path.")
+if not (AudioSegment.converter and AudioSegment.ffprobe):
+    st.error("ffmpeg or ffprobe is not correctly installed or not found in the system path.")
 
 
 def get_chunk_length_ms(file_path, target_size_mb):
