@@ -6,126 +6,131 @@ from tempfile import NamedTemporaryFile
 import math
 
 OPENAI_API_KEY = st.secrets["api_key"]
+import streamlit as st
+from openai import OpenAI
+from docx import Document
+import json
+import os
+
 # Set up OpenAI API key
-openai.api_key = OPENAI_API_KEY
+key = st.secrets["api_key"]
+client = OpenAI(api_key=key)
 
-from pydub.utils import which
+# Prompts for the OpenAI API
+system_prompt = "Translate the following text to English. Provide only the translation with no comments or notes."
 
-AudioSegment.converter = which("ffmpeg") 
-AudioSegment.ffprobe = which("ffprobe") 
+# Function to call OpenAI's translation model with chunked text
+def translate_text(text_chunk):
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": text_chunk}
+        ],
+        model="gpt-4o",  # Use the correct model
+        temperature=0.2,
+        max_tokens=3000,
+        top_p=0.1,
+        frequency_penalty=0.2,
+        presence_penalty=0.1,
+        stop=None
+    )
 
-if not (AudioSegment.converter and AudioSegment.ffprobe):
-    st.error("ffmpeg or ffprobe is not correctly installed or not found in the system path.")
+    response_json = json.loads(chat_completion.model_dump_json(indent=2))
+    content = response_json['choices'][0]['message']['content']
+    return content.strip()  # Strip any extra whitespace to ensure clean output
 
+# Function to read the .docx file and extract text
+def read_docx(docx_file):
+    doc = Document(docx_file)
+    full_text = []
+    for para in doc.paragraphs:
+        full_text.append(para.text)
+    return '\n'.join(full_text)
 
-def get_chunk_length_ms(file_path, target_size_mb):
-    """
-    Calculate the length of each chunk in milliseconds to create chunks of approximately target_size_mb.
+# Function to split text into chunks (approximately 1500 tokens per chunk)
+def split_text_into_chunks(text, max_chunk_size=1500):
+    words = text.split()
+    chunks = []
+    chunk = []
+    chunk_size = 0
 
-    Args:
-    file_path (str): Path to the audio file.
-    target_size_mb (int): Target size of each chunk in megabytes. Default is 5 MB.
+    for word in words:
+        word_length = len(word) + 1  # Account for the space between words
+        if chunk_size + word_length > max_chunk_size:
+            chunks.append(' '.join(chunk))
+            chunk = [word]
+            chunk_size = word_length
+        else:
+            chunk.append(word)
+            chunk_size += word_length
 
-    Returns:
-    int: Chunk length in milliseconds.
-    """
-    audio = AudioSegment.from_file(file_path)
-    file_size_bytes = os.path.getsize(file_path)
-    duration_ms = len(audio)
+    # Add the last remaining chunk
+    if chunk:
+        chunks.append(' '.join(chunk))
 
-    # Calculate the approximate duration per byte
-    duration_per_byte = duration_ms / file_size_bytes
-
-    # Calculate the chunk length in milliseconds for the target size
-    chunk_length_ms = target_size_mb * 1024 * 1024 * duration_per_byte
-    return math.floor(chunk_length_ms)
-
-def split_audio(audio_file_path, chunk_length_m=3):
-    """
-    Split an audio file into chunks of specified length.
-
-    Args:
-    audio_file_path (str): Path to the audio file.
-    chunk_length_ms (int): Length of each chunk in milliseconds.
-
-    Returns:
-    list: List of AudioSegment chunks.
-    """
-    audio = AudioSegment.from_file(audio_file_path)
-    chunks = [audio[i:i + chunk_length_ms] for i in range(0, len(audio), chunk_length_ms)]
     return chunks
 
+# Function to save the translated text into a .docx file
+def save_translated_text_to_docx(translated_text, output_path):
+    doc = Document()
+    doc.add_paragraph(translated_text)
+    doc.save(output_path)
 
-# def transcribe(audio_file):
-#     try:
-#         with open(audio_file, "rb") as audio:
-#             response = openai.audio.transcriptions.create(
-#                 model="whisper-1",
-#                 file=audio,
-#                 response_format="text"
-#             )
-#         return response
-    
-#     except openai.error.OpenAIError as e:
-#         st.error(f"OpenAI API Error: {e}")
-#         return None
+# Function to generate the new filename with "_translation" appended
+def get_translated_filename(uploaded_file):
+    file_name = os.path.splitext(uploaded_file.name)[0]  # Get the file name without extension
+    return f"{file_name}_translation.docx"  # Append "_translation" and add the .docx extension
 
-def transcribe(audio_file):
-    with open(audio_file, "rb") as audio:
-        response = openai.audio.transcriptions.create(
-            model="whisper-1",
-            file=audio,
-            response_format="text"
-        )
-    return response
+# Streamlit App
+def main():
+    st.title("Document Translation to English")
 
-def process_audio_chunks(audio_chunks):
-    transcriptions = []
-    min_length_ms = 100  # Minimum length required by OpenAI API (0.1 seconds)
-    
-    for i, chunk in enumerate(audio_chunks):
-        if len(chunk) < min_length_ms:
-            st.warning(f"Chunk {i} is too short to be processed.")
-            continue
-        
-        with NamedTemporaryFile(delete=False, suffix=".wav") as temp_audio_file:
-            chunk.export(temp_audio_file.name, format="wav")
-            temp_audio_file_path = temp_audio_file.name
+    # File uploader for .docx files
+    uploaded_file = st.file_uploader("Upload a .docx file", type="docx")
 
-        transcription = transcribe(temp_audio_file_path)
-        if transcription:
-            transcriptions.append(transcription)
-            st.write(f"Transcription for chunk {i}: {transcription}")
+    if uploaded_file is not None:
+        # Step 1: Read the uploaded .docx file
+        original_text = read_docx(uploaded_file)
 
-        os.remove(temp_audio_file_path)
-    return " ".join(transcriptions)
+        # Step 2: Split the text into manageable chunks
+        chunks = split_text_into_chunks(original_text)
 
-st.title("Audio Transcription with OpenAI's Whisper")
+        # Step 3: Display the number of chunks
+        num_chunks = len(chunks)
+        st.write(f"The document will be translated in **{num_chunks} chunks**.")
 
-uploaded_file = st.file_uploader("Upload an audio file", type=["wav", "mp3", "ogg", "m4a"])
+        # Step 4: Translate when the user clicks the button
+        if st.button("Translate"):
+            translated_texts = []
+            for i, chunk in enumerate(chunks):
+                # Translate each chunk
+                translated_chunk = translate_text(chunk)
+                translated_texts.append(translated_chunk)
 
-if uploaded_file is None:
-    st.warning("Please upload an audio file to proceed.")
-else:
-    if 'transcription' not in st.session_state or st.session_state.transcription is None:
-        st.audio(uploaded_file)
-        temp_audio_file = f"temp_audio_file.{uploaded_file.name.split('.')[-1]}"
-        with open(temp_audio_file, "wb") as f:
-            f.write(uploaded_file.getbuffer())
+                # Display each chunk as it's translated
+                st.write(f"Chunk {i + 1} out of {num_chunks}:")
+                st.text_area(f"Translated Chunk {i + 1}", translated_chunk, height=150)
 
-        with st.spinner('Transcribing...'):
-            chunk_length_ms = get_chunk_length_ms(temp_audio_file, target_size_mb=3)
-            audio_chunks = split_audio(temp_audio_file, chunk_length_ms)
-            transcription = process_audio_chunks(audio_chunks)
-            if transcription:
-                st.session_state.transcription = transcription
-                st.success('Transcription complete!')
-                output_file_path = f'{uploaded_file.name.rsplit(".", 1)[0]}_transcription.txt'
-                with open(output_file_path, 'w', encoding='utf-8') as f:
-                    f.write(transcription)
-                st.session_state.output_file_path = output_file_path
-            os.remove(temp_audio_file)
+            # Combine all the translated chunks into a single text
+            final_translated_text = '\n'.join(translated_texts)
 
-    if st.session_state.transcription:
-        st.text_area("Transcription", st.session_state.transcription, key="transcription_area_final")
-        st.download_button("Download Transcription", st.session_state.transcription, file_name=st.session_state.output_file_path, mime='text/plain')
+            # Step 5: Generate translated file name
+            output_file_name = get_translated_filename(uploaded_file)
+
+            # Save the translated text to a new .docx file
+            save_translated_text_to_docx(final_translated_text, output_file_name)
+
+            # Display complete translated text
+            st.text_area("Complete Translated Text", final_translated_text, height=400)
+
+            # Step 6: Offer the option to download the translated document
+            with open(output_file_name, "rb") as f:
+                st.download_button(
+                    label="Download Translated Document",
+                    data=f,
+                    file_name=output_file_name,
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
+
+if __name__ == "__main__":
+    main()
