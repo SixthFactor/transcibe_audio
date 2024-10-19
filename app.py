@@ -2,7 +2,6 @@ import streamlit as st
 import openai
 import os
 from pydub import AudioSegment
-from dotenv import load_dotenv
 from tempfile import NamedTemporaryFile
 import math
 from docx import Document
