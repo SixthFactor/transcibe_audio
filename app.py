@@ -14,7 +14,7 @@ AudioSegment.ffprobe = which("ffprobe")
 
 # OPENAI_API_KEY = st.secrets["api_key"]
 # Access the API key from the secrets file
-openai_api_key = st.secrets["openai"]["api_key"]
+openai_api_key = st.secrets["api_key"]
 # Set your OpenAI API key
 openai.api_key = openai_api_key
 
