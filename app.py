@@ -12,10 +12,11 @@ AudioSegment.converter = which("ffmpeg")
 AudioSegment.ffprobe = which("ffprobe")
 
 
-OPENAI_API_KEY = st.secrets["api_key"]
-
+# OPENAI_API_KEY = st.secrets["api_key"]
+# Access the API key from the secrets file
+openai_api_key = st.secrets["openai"]["api_key"]
 # Set your OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = openai_api_key
 
 def get_chunk_length_ms(file_path, target_size_mb):
     """
