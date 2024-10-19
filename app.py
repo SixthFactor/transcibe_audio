@@ -7,9 +7,6 @@ from tempfile import NamedTemporaryFile
 import math
 from docx import Document
 
-# Load environment variables from .env file
-load_dotenv()
-
 OPENAI_API_KEY = st.secrets["api_key"]
 
 # Set your OpenAI API key
