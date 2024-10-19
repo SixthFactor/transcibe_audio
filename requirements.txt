@@ -1,6 +1,3 @@
 openai
 streamlit
-pydub==0.25.1
-SpeechRecognition
-langdetect
-ffmpeg
+python-docx
