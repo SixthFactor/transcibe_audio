@@ -5,6 +5,12 @@ from pydub import AudioSegment
 from tempfile import NamedTemporaryFile
 import math
 from docx import Document
+from pydub.utils import which
+
+# Manually set the path for FFmpeg and ffprobe if needed
+AudioSegment.converter = which("ffmpeg")
+AudioSegment.ffprobe = which("ffprobe")
+
 
 OPENAI_API_KEY = st.secrets["api_key"]
 
