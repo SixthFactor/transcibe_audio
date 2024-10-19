@@ -1,16 +1,13 @@
 import streamlit as st
-import openai
-import os
-from pydub import AudioSegment
-from tempfile import NamedTemporaryFile
-import math
-
-OPENAI_API_KEY = st.secrets["api_key"]
-import streamlit as st
 from openai import OpenAI
 from docx import Document
 import json
 import os
+
+# openai_api_key = st.secrets["api_key"]
+# # Set your OpenAI API key
+# openai.api_key = openai_api_key
+
 
 # Set up OpenAI API key
 key = st.secrets["api_key"]
